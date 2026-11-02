@@ -102,6 +102,7 @@ endBuffer:
 	
 compare:
 	mov si, comandos
+	mov dx, si
 	mov si, [si]
 	xor cx, cx
 		loop1:
@@ -117,11 +118,12 @@ compare:
 
 next:
 	mov di, BUFF
-	mov ax, 2
+	mov ax, 4
 	inc cx
 	mul cx
 	mov si, comandos
 	add si, ax
+	mov dx, si
 	mov si, [si]
 	cmp [si], 0
 	je notEqual
@@ -140,10 +142,9 @@ notEqual:
 	ret
 	
 decider:
-	cmp cx, 0
-	je rebootComand
-	cmp cx, 1
-	je waitComand
+	add dx, 2
+	mov si, dx
+	jmp [si]
 	
 rebootComand:
 	xor ax, ax
@@ -164,8 +165,8 @@ reboot db "reboot", 0
 waitt db "wait", 0
 comandoInvalido db "Comando invalido", 0
 comandos:
-	dw reboot
-	dw waitt
+	dw reboot, rebootComand
+	dw waitt, waitComand
 
 times 510-($-$$) db 0
 dw 0xAA55
