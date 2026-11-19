@@ -57,7 +57,6 @@ backspace:
 	int 10h
 	mov al, 08h			;Volta o cursor novamente
 	int 10h
-	
 	jmp loop
 	
 printString:
@@ -88,12 +87,14 @@ getCursor:
 buffer:
 	mov [di], al		;Pega o conteudo de al e joga no conteudo apontado por di
 	inc di				;Aumenta di o endereço de di para o próximo caracter
+	
 	ret
 	
 decBuffer:
 	cmp di, BUFF		;Compara o endereço de di com o endereço de BUFF
 	jg true				;para saber se está na primeira posição de di
 	ret
+	
 	true:
 		dec di			;Decrementa o endereço de di a fim de retornar um
 		ret				;caracter
@@ -117,6 +118,9 @@ compare:
 			inc si
 			inc di
 			cmp bl, 0
+			je decider
+			;jmp loop1
+			cmp bl, 20h
 			je decider
 			jmp loop1
 
@@ -142,7 +146,6 @@ notEqual:
 	int 10h
 	mov al, 0Ah
 	int 10h
-	
 	ret
 	
 decider:
@@ -159,7 +162,7 @@ waitComand:
 	mov ah, 86h
 	mov cx, 004Ch
 	mov dx, 4B40h
-	int 15h
+	int 15h	
 	jmp inicio
 	
 clearComand:
@@ -177,7 +180,6 @@ clearComand:
 	mov dh, 00h
 	mov dl, 00h
 	int 10h
-	
 	jmp inicio
 	
 versionComand:
@@ -188,6 +190,14 @@ versionComand:
 helpComand:
 	mov si, helpText
 	call printString
+	call newLine
+	jmp inicio
+	
+echoComand:
+	mov si, BUFF
+	add si, 5
+	call printString
+	call newLine
 	jmp inicio
 	
 	
@@ -200,18 +210,24 @@ waitt db "wait", 0
 clear db "clear", 0
 version db "version", 0
 help db "help", 0
+echo db "echo", 20h, 0
+
 helpText db 0Ah, "reboot - reinicia o sistema", 0Dh, 0Ah
 		 db "wait - espera de 5 segundos", 0Dh, 0Ah
 		 db "clear - limpa todo o texto", 0Dh, 0Ah
-		 db "version - mostra a versao do shell", 0Dh, 0Ah, 0Ah, 0
+		 db "echo - digita o texto passado por parametro", 0Dh, 0Ah
+		 db "version - mostra a versao do shell", 0Dh, 0Ah, 0
+		 
 comandoInvalido db "Comando invalido, digite help para ajuda", 0
 versionText db "versao 1.0 100% atualizado", 0Dh, 0Ah, 0
+
 comandos:
 	dw reboot, rebootComand
 	dw waitt, waitComand
 	dw clear, clearComand
 	dw help, helpComand
 	dw version, versionComand
+	dw echo, echoComand
 	dw 0, 0
 
 times 1024-($-$$) db 0
