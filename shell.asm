@@ -2,6 +2,13 @@
 BITS 16
 ORG 7E00h
 BUFF equ 9000h
+
+	cli
+	xor bx, bx
+	mov ss, bx
+	mov sp, 5000h
+	sti
+	
 ;-----------------------------------------
 
 ;------------------Código-----------------
@@ -31,6 +38,7 @@ read:
 	je backspace
 	
 	call printChar		;Função para printar o caracter pressionado
+	call buffer			;Função para armazenar no buffer
 	ret
 	
 enter:
@@ -71,7 +79,6 @@ printString:
 		jmp printString
 	
 printChar:
-	call buffer			;Chama a função buffer
 	mov ah, 0Eh
 	int 10h
 	ret
@@ -166,13 +173,13 @@ waitComand:
 	jmp inicio
 	
 clearComand:
-	mov ah, 06h       ; scroll up
-	mov al, 00h       ; 0 = limpa toda a janela
-	mov bh, 07h       ; atributo: fundo preto, texto cinza
-	mov ch, 00h       ; linha inicial
-	mov cl, 00h       ; coluna inicial
-	mov dh, 24        ; última linha
-	mov dl, 79        ; última coluna
+	mov ah, 06h       	; scroll up
+	mov al, 00h       	; 0 = limpa toda a janela
+	mov bh, 07h       	; atributo: fundo preto, texto cinza
+	mov ch, 00h       	; linha inicial
+	mov cl, 00h       	; coluna inicial
+	mov dh, 24        	; última linha
+	mov dl, 79        	; última coluna
 	int 10h
 	
 	mov ah, 02h
@@ -200,6 +207,38 @@ echoComand:
 	call newLine
 	jmp inicio
 	
+dateComand:
+	mov ah, 04h
+	int 1Ah				;ch=seculo, cl=ano, dh=mes, dl=dia
+	
+	mov al, dl
+	call bcdPrinter		;Printar dia
+	mov ax, '/'
+	call printChar
+	mov al, dh
+	call bcdPrinter		;Printar mes
+	mov ax, '/'
+	call printChar
+	mov al, ch
+	call bcdPrinter		;Printar seculo
+	mov al, cl
+	call bcdPrinter		;Printar ano
+	call newLine
+	jmp inicio
+	
+bcdPrinter:
+	push ax
+	shr al, 4
+	add al, '0'
+	call printChar
+	
+	pop ax
+	and al, 0Fh
+	add al, '0'
+	call printChar
+	
+	ret
+	
 	
 ;-----------------------------------------
 
@@ -211,11 +250,13 @@ clear db "clear", 0
 version db "version", 0
 help db "help", 0
 echo db "echo", 20h, 0
+date db "date", 0
 
 helpText db 0Ah, "reboot - reinicia o sistema", 0Dh, 0Ah
 		 db "wait - espera de 5 segundos", 0Dh, 0Ah
 		 db "clear - limpa todo o texto", 0Dh, 0Ah
 		 db "echo - digita o texto passado por parametro", 0Dh, 0Ah
+		 db "date - exibe a data atual", 0Dh, 0Ah
 		 db "version - mostra a versao do shell", 0Dh, 0Ah, 0
 		 
 comandoInvalido db "Comando invalido, digite help para ajuda", 0
@@ -228,6 +269,7 @@ comandos:
 	dw help, helpComand
 	dw version, versionComand
 	dw echo, echoComand
+	dw date, dateComand
 	dw 0, 0
 
 times 1024-($-$$) db 0
